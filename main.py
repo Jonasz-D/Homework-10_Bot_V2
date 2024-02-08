@@ -1,9 +1,9 @@
-from collections import UserDict, UserList
+from collections import UserDict
 
 def input_error(func):
-    def inner(base_command, command):
+    def inner(base_command, command, contacts):
         try:
-            return func(base_command, command)
+            return func(base_command, command, contacts)
         except KeyError:
             return 'The command is not exist'
             
@@ -24,7 +24,7 @@ class Field:
 class Name(Field):
     def __init__(self, contact_data):
         super().__init__(contact_data)
-        
+        self.contact_data = contact_data
 
 class Phone(Field):
     def __init__(self, contact_data):
@@ -32,21 +32,23 @@ class Phone(Field):
 
         if not self.contact_data.isdigit():
             raise ValueError
+        else:
+            self.contact_data = contact_data
 
-class Record():
+class Record:
     def __init__(self, contact_name):
-        self.name = Name(contact_name)
+        self.name = (Name(contact_name).contact_data)
         self.phone_num = []
 
     def add_phone(self, phone):
-        self.phone_num.append(str(Phone(phone)))
+        self.phone_num.append(Phone(phone).contact_data)
 
     def remove_phone(self, phone):
-        self.phone_num.remove(str(Phone(phone)))
+        self.phone_num.remove(Phone(phone).contact_data)
 
     def change_phone(self, phone, new_phone):
-        self.phone_num.remove(str(Phone(phone)))
-        self.phone_num.append(str(Phone(new_phone)))
+        self.phone_num.remove(Phone(phone).contact_data)
+        self.phone_num.append(Phone(new_phone).contact_data)
 
 
 class AdressBook(UserDict):
@@ -60,10 +62,10 @@ class AdressBook(UserDict):
 
         return all_contacts
     
-def hello(command):
+def hello(command, contacts):
     return 'How can I help you?'
 
-def create_contact(command):
+def create_contact(command, contacts):
     name = command[1]
     if list(contacts.keys()) == []:
         return contacts.add_record(name)
@@ -74,7 +76,7 @@ def create_contact(command):
         
     return contacts.add_record(name)
 
-def add_phone(command):
+def add_phone(command, contacts):
     name, phone = command[1], command[2]
     for contact, phones in contacts.items():
         if name == str(contact) and phone not in phones.phone_num:
@@ -83,7 +85,7 @@ def add_phone(command):
       
     return "The contact doesn't exists or phone number was already added"
 
-def change_phone_num(command):
+def change_phone_num(command, contacts):
     name, phone_num, new_phone = command[1], command[2], command[3]
     
     for contact, phones in contacts.items():
@@ -92,7 +94,7 @@ def change_phone_num(command):
             return
     return "The contact or phone number doesn't exists"
 
-def show_contact(command):
+def show_contact(command, contacts):
     name = command[1]
     for contact, phones in contacts.items():
         if name == str(contact):
@@ -100,7 +102,7 @@ def show_contact(command):
     
     return f"contact name: {name} doesn't exists"
 
-def delete_phone(command):
+def delete_phone(command, contacts):
     name, phone = command[1], command[2]
     for contact, phones in contacts.items():
         if name == str(contact) and phone in (phones.phone_num):
@@ -109,13 +111,13 @@ def delete_phone(command):
         
     return "The contact or phone number doesn't exists"
     
-def show_all(command):
+def show_all(command, contacts):
     return contacts.show_all()
 
-def end_program(command):
+def end_program(command, contacts):
     return False
 
-def accepted_commands(command):
+def accepted_commands(command, contacts):
     commands = (list(OPERATIONS.keys()))
     message = ''
     for command in commands:
@@ -140,12 +142,13 @@ OPERATIONS = {
 }
 
 @input_error
-def handler_command(base_command, command):
-    return OPERATIONS[base_command](command)
+def handler_command(base_command, command, contacts):
+    return OPERATIONS[base_command](command, contacts)
 
 def main():
     flag = True
-    print(accepted_commands(OPERATIONS))
+    contacts = AdressBook()
+    print(accepted_commands(OPERATIONS, contacts))
     while flag:
         command = input('Write your command: ').lower().strip().split()
 
@@ -154,7 +157,7 @@ def main():
         except IndexError:
             continue
 
-        handler = handler_command(base_command, command)
+        handler = handler_command(base_command, command, contacts)
 
         if isinstance(handler, str):
             print(handler)
@@ -165,8 +168,6 @@ def main():
         else:
             handler
 
-
-contacts = AdressBook()
 
 if __name__ == '__main__':
     main()
